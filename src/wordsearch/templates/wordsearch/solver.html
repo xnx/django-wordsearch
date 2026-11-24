@@ -1,0 +1,47 @@
+{% extends "wordsearch/page.html" %}
+{% block wordsearch_title %}Word Search solver{% endblock %}
+{% block wordsearch_content %}
+<div class="wordsearch">
+{% include "wordsearch/_assets.html" %}
+<nav class="wordsearch-crumbs" aria-label="Breadcrumb">{% include "wordsearch/_crumbs_root.html" %}<span>Word Search solver</span></nav>
+<h1>Word Search solver</h1>
+<div class="wordsearch-intro">
+  <p>Find the words in a word search puzzle, reading in any of the eight directions. Enter the grid one row on each line, with its letters written together (<code>SNMEHJU</code>) or separated by spaces (<code>S N M E H J U</code>); a blank cell in a shaped grid may be written as a full stop. To make a puzzle, use the <a href="{% url 'wordsearch:maker' %}">Word Search maker</a>.</p>
+</div>
+
+<form method="post" class="wordsearch-form">
+  {% csrf_token %}
+  <div class="wordsearch-columns">
+    <div class="wordsearch-field">
+      <label for="wordsearch-grid">Grid, one row on each line</label>
+      <textarea id="wordsearch-grid" name="grid" rows="12" required spellcheck="false" autocomplete="off" wrap="off">{{ grid_text }}</textarea>
+    </div>
+    <div class="wordsearch-field">
+      <label for="wordsearch-words">Words to find, one on each line</label>
+      <textarea id="wordsearch-words" name="words" rows="12" required spellcheck="false" autocomplete="off">{{ words_text }}</textarea>
+    </div>
+  </div>
+  <p class="wordsearch-muted">At most {{ max_size }} rows and columns, and {{ max_words }} words.</p>
+  <button type="submit">Solve</button>
+</form>
+
+<div aria-live="polite" class="wordsearch-results">
+  {% if message %}<p role="alert" class="wordsearch-message">{{ message }}.</p>{% endif %}
+  {% if results %}
+  <p><strong>{{ nfound }}</strong> of {{ results|length }} word{{ results|length|pluralize }} found.</p>
+  <div class="wordsearch-grid">{{ solution_svg|safe }}</div>
+  <table class="wordsearch-table">
+    <thead><tr><th>Word</th><th>Where (row and column of the first letter)</th></tr></thead>
+    <tbody>
+      {% for result in results %}
+      <tr>
+        <td>{{ result.word }}</td>
+        <td>{% for o in result.occurrences %}row {{ o.row }}, column {{ o.col }}, reading {{ o.direction }}{% if not forloop.last %}; {% endif %}{% empty %}<strong>not found</strong>{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

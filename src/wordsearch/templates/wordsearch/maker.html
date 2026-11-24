@@ -1,0 +1,66 @@
+{% extends "wordsearch/page.html" %}
+{% block wordsearch_title %}Word Search maker{% endblock %}
+{% block wordsearch_content %}
+<div class="wordsearch">
+{% include "wordsearch/_assets.html" %}
+<nav class="wordsearch-crumbs" aria-label="Breadcrumb">{% include "wordsearch/_crumbs_root.html" %}<span>Word Search maker</span></nav>
+<h1>Word Search maker</h1>
+<div class="wordsearch-intro">
+  <p>Make a word search puzzle from a list of words. The words are hidden in a grid of letters, in straight lines that may cross where they share a letter, and the other cells are filled with letters drawn at random from the words themselves. To find the words in a puzzle you already have, use the <a href="{% url 'wordsearch:solver' %}">Word Search solver</a>.</p>
+  {% include "wordsearch/_about.html" %}
+</div>
+
+<form method="get" class="wordsearch-form">
+  <div class="wordsearch-field">
+    <label for="wordsearch-words">Words, one on each line</label>
+    <textarea id="wordsearch-words" name="words" rows="8" maxlength="{{ max_chars }}" required spellcheck="false" autocomplete="off">{{ form.words }}</textarea>
+    <p class="wordsearch-muted">At most {{ max_words }} words, of two letters or more. Spaces, hyphens and other characters that are not letters are left out of the grid.</p>
+  </div>
+  <div class="wordsearch-row">
+    <div class="wordsearch-field">
+      <label for="wordsearch-rows">Rows</label>
+      <input type="number" id="wordsearch-rows" name="rows" value="{{ form.rows }}" min="2" max="{{ max_size }}" required>
+    </div>
+    <div class="wordsearch-field">
+      <label for="wordsearch-cols">Columns</label>
+      <input type="number" id="wordsearch-cols" name="cols" value="{{ form.cols }}" min="2" max="{{ max_size }}" required>
+    </div>
+    <div class="wordsearch-field">
+      <label for="wordsearch-mask">Shape</label>
+      <select id="wordsearch-mask" name="mask">
+        {% for value, name in masks %}<option value="{{ value }}"{% if value == form.mask %} selected{% endif %}>{{ name }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <fieldset class="wordsearch-field">
+    <legend>Difficulty</legend>
+    {% for value, name in difficulties %}
+    <div class="wordsearch-choice">
+      <input type="radio" id="wordsearch-{{ value }}" name="difficulty" value="{{ value }}"{% if value == form.difficulty %} checked{% endif %}>
+      <label for="wordsearch-{{ value }}">{{ name }}</label>
+    </div>
+    {% endfor %}
+  </fieldset>
+  <button type="submit">Make puzzle</button>
+</form>
+
+<div aria-live="polite" class="wordsearch-results">
+  {% if message %}<p role="alert" class="wordsearch-message">{{ message }}.</p>{% endif %}
+  {% if puzzle_svg %}
+  <div class="wordsearch-grid">{{ puzzle_svg|safe }}</div>
+  <h2>Words to find</h2>
+  <ul class="wordsearch-words">{% for word in words %}<li>{{ word }}</li>{% endfor %}</ul>
+  <p class="wordsearch-links">
+    <a href="{{ permalink }}" rel="nofollow">Link to this puzzle</a>
+    <a href="{{ another }}" rel="nofollow">Another puzzle of these words</a>
+    <a href="{{ puzzle_download }}" download="wordsearch.svg">Download the puzzle (SVG)</a>
+    <a href="{{ solution_download }}" download="wordsearch-solution.svg">Download the solution (SVG)</a>
+  </p>
+  <details class="wordsearch-solution">
+    <summary>Solution</summary>
+    <div class="wordsearch-grid">{{ solution_svg|safe }}</div>
+  </details>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

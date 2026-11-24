@@ -1,0 +1,56 @@
+[project]
+name = "django-wordsearch"
+version = "0.1.0"
+description = "Word search puzzles for Django sites: a maker, with shaped grids, difficulties and solutions, and a solver."
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [{ name = "Christian Hill" }]
+requires-python = ">=3.12"
+keywords = ["django", "word search", "puzzle", "wordsearch"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Framework :: Django :: 6.1",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Games/Entertainment :: Puzzle Games",
+]
+dependencies = ["django>=5.2"]
+
+[project.urls]
+Homepage = "https://github.com/xnx/django-wordsearch"
+Changelog = "https://github.com/xnx/django-wordsearch/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = ["pytest", "pytest-django", "ruff"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wordsearch"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+# A warning raised in the package's own code, such as of a deprecation, fails.
+filterwarnings = ["error:::wordsearch"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ"]
+ignore = ["E501"]  # line length is left to `ruff format`
