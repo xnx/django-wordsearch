@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (24 November 2026)
 
 The first release, from the app that runs at https://scipython.com/apps/wordsearch/.
 
