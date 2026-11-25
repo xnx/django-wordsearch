@@ -32,6 +32,55 @@ def test_a_seed_always_makes_the_same_puzzle():
     )
 
 
+def test_a_crowded_grid_keeps_its_diagonal_words():
+    # 128 letters in 144 cells: the words must cross to fit.
+    words = PLANETS + [
+        "Pluto",
+        "Ceres",
+        "Eris",
+        "Haumea",
+        "Makemake",
+        "Titan",
+        "Europa",
+        "Ganymede",
+        "Callisto",
+        "Io",
+        "Triton",
+        "Phobos",
+        "Deimos",
+        "Charon",
+    ]
+    for difficulty in ("medium", "hard"):
+        for seed in range(10):
+            _, placed = puzzle.make_wordsearch(
+                words, 12, 12, difficulty=difficulty, seed=seed
+            )
+            ndiagonal = sum(puzzle.is_diagonal((di, dj)) for *_, di, dj in placed)
+            assert ndiagonal >= len(placed) / 4, (difficulty, seed)
+
+
+def test_a_grid_too_crowded_for_diagonal_words_is_still_filled():
+    # 46 letters in 49 cells: the words must lie almost wholly in rows and
+    # columns, which the share of diagonal words aimed for allows only once it
+    # has fallen to nothing.
+    for seed in range(5):
+        _, placed = puzzle.make_wordsearch(PLANETS, 7, 7, difficulty="hard", seed=seed)
+        assert len(placed) == len(PLANETS)
+
+
+def test_no_word_is_written_wholly_over_the_words_before_it():
+    for difficulty in puzzle.DIRECTIONS:
+        for seed in range(10):
+            _, placed = puzzle.make_wordsearch(
+                ["Earth", "Heart", "Ear", "Art"], 6, 6, difficulty=difficulty, seed=seed
+            )
+            written = set()
+            for word, i, j, di, dj in placed:
+                cells = {(i + k * di, j + k * dj) for k in range(len(word))}
+                assert not cells <= written, (difficulty, seed, word)
+                written |= cells
+
+
 def test_the_filler_is_drawn_from_the_letters_of_the_words():
     grid, _ = puzzle.make_wordsearch(["ABAB", "BABA"], 6, 6, seed=3)
     assert {letter for row in grid for letter in row} == {"A", "B"}

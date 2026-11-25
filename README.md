@@ -2,7 +2,7 @@
 
 The django-wordsearch package adds a word search maker and solver to a Django site. A *word search puzzle* hides a list of words in a grid of letters, each along a straight line of cells, among letters that fill the rest of the grid. The maker hides the words that a visitor enters, in a rectangular or shaped grid, at one of three difficulties, and shows the puzzle with its solution, in which each word is ringed. The solver finds the words in a puzzle that a visitor already has, reading in any of the eight directions.
 
-The package needs Python 3.12 or later and Django 5.2 or later, and has no other dependencies. It stores nothing, so it has no models or migrations. It runs at https://scipython.com/apps/wordsearch/, and its method is described in the blog post [Word search puzzles](https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
+The package needs Python 3.12 or later and Django 5.2 or later, and has no other dependencies. It stores nothing, so it has no models or migrations. It runs at https://scipython.com/apps/wordsearch/, and an earlier version of its method is described in the blog post [Word search puzzles](https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
 
 ## Installation
 
@@ -32,7 +32,11 @@ The maker is then at `wordsearch/` and the solver at `wordsearch/solve/` (the UR
 
 The maker takes a list of words, one on each line or separated by commas, the numbers of rows and columns, a shape and a difficulty. Spaces and other characters that are not letters are left out of the grid, so that NEW YORK is written NEWYORK. The shapes are a rectangle, a circle (the largest that fits in the grid) and *squares* (the grid with its margin cut away except at its corners). At the easy difficulty, words read right or down; at medium, also diagonally down or up to the right; at hard, in all eight directions, so that words may also read backwards.
 
-The words are placed longest first by a depth-first search: each word is put in the first place where it fits and, if a word fits nowhere, the word before it is moved to its next place. A search that has made twice as many placements as there are words is begun afresh in a new random order, until `WORDSEARCH_TIME_LIMIT`. The other cells are filled with letters drawn at random from the words themselves, in proportion to their frequency in them, so that the filler cannot be told from the words by its letters.
+The words are placed longest first by a depth-first search: each word is put in the first place where it fits and, if a word fits nowhere, the word before it is moved to its next place. A search that has made twice as many placements as there are words is begun afresh in a new random order, until `WORDSEARCH_TIME_LIMIT`.
+
+The order in which the places for a word are tried keeps a share of the words diagonal and packs them tightly. A crowded grid is filled most easily along its rows and columns, so that a search that tried the directions in random order would make puzzles with few or no diagonal words in such a grid. At medium and hard, therefore, the diagonal directions are tried first for any word that, placed straight, would leave fewer than half of the words so far reading diagonally, and the straight directions first otherwise. In each direction, the places where the word shares the most letters with words already written are tried first, which packs the words more tightly, so that more of them fit; a place where every letter is already written, such as EAR along EARTH, is never used, since the word would then be found only within other words. In a grid too crowded for diagonal words, the share aimed for falls with each search, from half to nothing over the first 100 searches. It is measured in searches, not seconds, so that a seed always makes the same puzzle, however busy the server.
+
+The other cells are filled with letters drawn at random from the words themselves, in proportion to their frequency in them, so that the filler cannot be told from the words by its letters.
 
 The maker is a GET form, and each puzzle is made with a random seed, so that the link to a puzzle, which holds the seed, makes the same puzzle again. The puzzle and its solution can be downloaded as SVG images, black on white, and a printed page shows only the puzzle and its words.
 

@@ -2,13 +2,19 @@
 
 The words are placed longest first by a depth-first search (backtracking): each
 word is put in the first place where it fits and, if a word fits nowhere, the
-word before it is moved to its next place. A search is begun afresh, in a new
-random order, whenever it has made twice as many placements as there are words,
-until a time limit. The other cells are filled with letters drawn from the words,
-in proportion to their frequency in them. The method is described in the blog
-post "Word search puzzles" (https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
+word before it is moved to its next place. The places for a word are tried so
+as to keep a share of the words diagonal and, in each direction, those that
+share the most letters with words already written first (see placements). A
+search is begun afresh, in a new random order, whenever it has made twice as
+many placements as there are words, until a time limit; the share of diagonal
+words aimed for falls with each search, to nothing after RELAX_SEARCHES. The
+other cells are filled with letters drawn from the words, in proportion to
+their frequency in them. The blog post "Word search puzzles"
+(https://scipython.com/blog/making-a-word-search-puzzle-in-python/) describes an
+earlier version of the method.
 """
 
+import itertools
 import math
 import random
 import time
@@ -16,6 +22,12 @@ from collections import defaultdict
 from html import escape
 
 EMPTY, MASKED = " ", "*"  # a cell not yet filled, and one never to be filled
+
+# The number of searches over which the share of diagonal words that a search
+# aims for falls from the diagonal directions' share of directions to nothing,
+# so that a grid too crowded for diagonal words is still filled. It is measured
+# in searches, not seconds, so that a seed always makes the same puzzle.
+RELAX_SEARCHES = 100
 
 # The directions in which words may read, as (row step, column step), at each
 # difficulty: right and down; also diagonally down and up to the right; and in
@@ -65,33 +77,63 @@ def letters_only(word):
     return "".join(c for c in word.upper() if c.isalpha())
 
 
-def fits(grid, word, i, j, di, dj):
-    """Whether word can be written in grid from cell (i, j) in direction
-    (di, dj): each of its cells must lie in the grid, and be empty or already
-    hold the same letter."""
+def is_diagonal(direction):
+    """Whether direction (di, dj) is diagonal, not along a row or column."""
+    di, dj = direction
+    return di != 0 and dj != 0
+
+
+def shared_letters(grid, word, i, j, di, dj):
+    """The number of the letters of word that grid already holds where word
+    would be written from cell (i, j) in direction (di, dj), or None if it
+    cannot be written there: each of its cells must lie in the grid, and be
+    empty or already hold the same letter."""
     nrows, ncols = len(grid), len(grid[0])
+    shared = 0
     for k, letter in enumerate(word):
         r, c = i + k * di, j + k * dj
         if not (0 <= r < nrows and 0 <= c < ncols):
-            return False
-        if grid[r][c] not in (EMPTY, letter):
-            return False
-    return True
+            return None
+        if grid[r][c] == letter:
+            shared += 1
+        elif grid[r][c] != EMPTY:
+            return None
+    return shared
 
 
-def placements(grid, word, directions, rng):
-    """Generate every placement (i, j, di, dj) of word in grid: the directions
-    in random order, and the starting cells in random order for each."""
+def placements(grid, word, directions, placed, diagonal_share, rng):
+    """Generate every placement (i, j, di, dj) of word in grid, given the
+    placements of the words before it.
+
+    The diagonal directions come first if fewer of the words placed so far
+    read diagonally than the fraction diagonal_share of them and this word,
+    and last otherwise; within each group, the directions are in random order.
+    Without this balance, a crowded grid would be filled mostly along its rows
+    and columns, where words pack most easily. The first, and longest, word is
+    therefore tried diagonally first whenever diagonal_share is above zero,
+    since a long word soon finds no diagonal free once other words are
+    written. In each direction, the starting cells where the word shares the
+    most letters with words already written come first, which packs the words
+    more tightly; among equals, they are in random order. A placement in which
+    every letter is already written, such as EAR along EARTH, is left out,
+    since the word would then be found only within other words."""
     nrows, ncols = len(grid), len(grid[0])
-    for di, dj in rng.sample(directions, len(directions)):
-        starts = [
-            (i, j)
-            for i in range(nrows)
-            for j in range(ncols)
-            if fits(grid, word, i, j, di, dj)
-        ]
+    ndiagonal = sum(1 for *_, di, dj in placed if is_diagonal((di, dj)))
+    diagonal_first = ndiagonal < diagonal_share * (len(placed) + 1)
+    order = rng.sample(directions, len(directions))
+    order.sort(key=lambda direction: is_diagonal(direction) != diagonal_first)
+    for di, dj in order:
+        starts = []
+        for i in range(nrows):
+            for j in range(ncols):
+                shared = shared_letters(grid, word, i, j, di, dj)
+                if shared is not None and shared < len(word):
+                    starts.append((i, j, shared))
         rng.shuffle(starts)
-        for i, j in starts:
+        # The sort is stable, so starts that share as many letters stay in
+        # random order.
+        starts.sort(key=lambda start: -start[2])
+        for i, j, _ in starts:
             yield i, j, di, dj
 
 
@@ -99,12 +141,13 @@ class GiveUp(Exception):
     """Raised when a search has tried as many placements as it may."""
 
 
-def place_words(grid, words, directions, rng, max_steps):
+def place_words(grid, words, directions, diagonal_share, rng, max_steps):
     """Write words into grid by depth-first search: each word in turn is put
-    in the first place where it fits and, if a word fits nowhere, the word
-    before it is moved to its next place. Return the placements, as tuples
-    (word, i, j, di, dj), or None if the words cannot be fitted; raise GiveUp
-    after max_steps placements."""
+    in the first place where it fits, in the order of placements for the
+    share diagonal_share of diagonal words, and, if a word fits nowhere, the
+    word before it is moved to its next place. Return the placements, as
+    tuples (word, i, j, di, dj), or None if the words cannot be fitted; raise
+    GiveUp after max_steps placements."""
     placed = []
     steps = 0
 
@@ -113,7 +156,9 @@ def place_words(grid, words, directions, rng, max_steps):
         if k == len(words):
             return True
         word = words[k]
-        for i, j, di, dj in placements(grid, word, directions, rng):
+        for i, j, di, dj in placements(
+            grid, word, directions, placed, diagonal_share, rng
+        ):
             steps += 1
             if steps > max_steps:
                 raise GiveUp
@@ -147,16 +192,21 @@ def make_wordsearch(
     # Longest first; ties are broken alphabetically, so that a seed always
     # makes the same puzzle.
     words = sorted({letters_only(w) for w in words} - {""}, key=lambda w: (-len(w), w))
+    directions = DIRECTIONS[difficulty]
+    share = sum(map(is_diagonal, directions)) / len(directions)
     is_masked = MASKS[mask] if mask else lambda *cell: False
     max_steps = 2 * len(words)
     deadline = time.monotonic() + time_limit
-    while True:
+    for search in itertools.count():
+        diagonal_share = share * max(0, 1 - search / RELAX_SEARCHES)
         grid = [
             [MASKED if is_masked(i, j, nrows, ncols) else EMPTY for j in range(ncols)]
             for i in range(nrows)
         ]
         try:
-            placed = place_words(grid, words, DIRECTIONS[difficulty], rng, max_steps)
+            placed = place_words(
+                grid, words, directions, diagonal_share, rng, max_steps
+            )
         except GiveUp:
             if time.monotonic() > deadline:
                 raise ValueError(
