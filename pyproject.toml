@@ -1,6 +1,6 @@
 [project]
 name = "django-wordsearch"
-version = "0.1.0"
+version = "0.2.0"
 description = "Word search puzzles for Django sites: a maker, with shaped grids, difficulties and solutions, and a solver."
 readme = "README.md"
 license = "BSD-3-Clause"

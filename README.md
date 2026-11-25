@@ -2,7 +2,7 @@
 
 The django-wordsearch package adds a word search maker and solver to a Django site. A *word search puzzle* hides a list of words in a grid of letters, each along a straight line of cells, among letters that fill the rest of the grid. The maker hides the words that a visitor enters, in a rectangular or shaped grid, at one of three difficulties, and shows the puzzle with its solution, in which each word is ringed. The solver finds the words in a puzzle that a visitor already has, reading in any of the eight directions.
 
-The package needs Python 3.12 or later and Django 5.2 or later, and has no other dependencies. It stores nothing, so it has no models or migrations. It runs at https://scipython.com/apps/wordsearch/, and an earlier version of its method is described in the blog post [Word search puzzles](https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
+The package needs Python 3.12 or later and Django 5.2 or later, and has no other dependencies. It stores nothing, so it has no models or migrations. It runs at https://scipython.com/apps/wordsearch/, and its method is described in the blog post [Word search puzzles](https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
 
 ## Installation
 

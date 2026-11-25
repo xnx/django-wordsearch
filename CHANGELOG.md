@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (25 November 2026)
 
 - The maker keeps a share of the words diagonal in a crowded grid, in which, before, most or all of them could read along rows and columns, where words pack most easily. At medium and hard, the diagonal directions are tried first while fewer than half of the words read diagonally, and the places where a word shares the most letters with words already written are tried first, which packs the words more tightly. For 22 words (128 letters) in a 12×12 grid, at medium, 47% of the words read diagonally on average over 20 seeds, and at least 36% in each puzzle, against 39% and 5% before. An 11×11 grid, which was filled for 7 of the 20 seeds, is now filled for all of them, though still with few diagonal words (13% on average).
 - In a grid too crowded for diagonal words, the share of them aimed for falls to nothing over the first 100 searches, so that such a grid is still filled.

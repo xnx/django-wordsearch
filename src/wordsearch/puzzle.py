@@ -9,9 +9,8 @@ search is begun afresh, in a new random order, whenever it has made twice as
 many placements as there are words, until a time limit; the share of diagonal
 words aimed for falls with each search, to nothing after RELAX_SEARCHES. The
 other cells are filled with letters drawn from the words, in proportion to
-their frequency in them. The blog post "Word search puzzles"
-(https://scipython.com/blog/making-a-word-search-puzzle-in-python/) describes an
-earlier version of the method.
+their frequency in them. The method is described in the blog post "Word search
+puzzles" (https://scipython.com/blog/making-a-word-search-puzzle-in-python/).
 """
 
 import itertools
